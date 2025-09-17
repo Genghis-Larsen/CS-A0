@@ -8,19 +8,17 @@ int print_error(char *path, int errnum)
     return fprintf(stdout, "%s Somethings wrong (%s)\n", path, strerror(errnum));
 }
 
-int print_hello_world(void)
+int main(int argc, char *argv[])
 {
-    return fprintf(stdout, "Hello, world!\n");
-}
-
-int main(void)
-{
-    int retval = EXIT_SUCCESS;
-
-    if (print_hello_world() <= 0)
+    FILE *f = fopen(argv[1], "r");
+    unsigned char c;
+    while (fread(&c, sizeof(char), 1, f) == 1)
     {
-        retval = EXIT_FAILURE;
+        printf("%3d ", (int)c);
+        if (c > 31 && c < 127)
+        {
+            fwrite(&c, sizeof(char), 1, stdout);
+        }
+        printf("\n");
     }
-
-    return retval;
 }
