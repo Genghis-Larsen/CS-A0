@@ -2,6 +2,7 @@
 #include <stdlib.h> // exit, EXIT_FAILURE, EXIT_SUCCESS.
 #include <string.h> // strerror.
 #include <errno.h>  // errno.
+#include <assert.h>
 
 int print_error(char *path, int errnum)
 {
