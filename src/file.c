@@ -54,39 +54,33 @@ int main(int argc, char *argv[]) {
     fseek(f, 0, SEEK_SET);
     int isUtf = 1;
     while (fread(&c, sizeof(char), 1, f) == 1) {
-        if (c > 247 || (c > 127 && c < 192)) {
+        if (c == 0 || c > 247 || (c > 127 && c < 192)) {
             isUtf = 0;
             break;
         } else if (c > 191 && c < 224) {
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
         } else if (c > 223 && c < 240) {
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
         } else if (c > 239 && c < 248) {
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
-            fread(&c, sizeof(char), 1, f);
-            if (c < 128 || c > 191) {
+            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
                 isUtf = 0;
                 break;
             }
