@@ -3,16 +3,24 @@
 #include <string.h> // strerror.
 #include <errno.h>  // errno.
 
-int print_hello_world(void) {
-  return fprintf(stdout, "Hello, world!\n");
+int print_error(char *path, int errnum)
+{
+    return fprintf(stdout, "%s Somethings wrong (%s)\n", path, strerror(errnum));
 }
 
-int main(void) {
-  int retval = EXIT_SUCCESS;
+int print_hello_world(void)
+{
+    return fprintf(stdout, "Hello, world!\n");
+}
 
-  if (print_hello_world() <= 0) {
-    retval = EXIT_FAILURE;
-  }
+int main(void)
+{
+    int retval = EXIT_SUCCESS;
 
-  return retval;
+    if (print_hello_world() <= 0)
+    {
+        retval = EXIT_FAILURE;
+    }
+
+    return retval;
 }
