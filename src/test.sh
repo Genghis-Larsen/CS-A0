@@ -20,16 +20,32 @@ printf "" > test_files/empty.input
 ## Random ascii files of various sizes
 for i in $(seq 1 20); do # Generates 20 files
     bytes=$((i * 200)) # file sizes of 200, 400, 600... bytes
-    LC_ALL=C tr -dc 'A-Za-z0-9[:punct:][:space:]' < /dev/urandom | head -c "$bytes" > "test_files/ascii_rand_${i}.input" 
+    LC_ALL=C tr -dc 'A-Za-z0-9[:punct:][:space:]' < /dev/urandom \
+    | head -c "$bytes" > "test_files/ascii_rand_${i}.input" 
     # Random content of only ascii characters
 done
 
 ## Random ISO files of various sizes
 for i in $(seq 1 20); do # 20 files
     size=$((i * 200)) # increasing file sizes
-    LC_ALL=C tr -dc 'A-Za-z \n\345\346\370' < /dev/urandom | head -c "$size" > "test_files/iso_rand_${i}.input"
+    LC_ALL=C tr -dc 'A-Za-z \n\345\346\370' < /dev/urandom \
+    | head -c "$size" > "test_files/iso_rand_${i}.input"
     # only allows known iso characters and specifies single byte codes for æøå
 done
+
+## UTF-8 files of various sizes
+for i in $(seq 1 20); do # 20 files
+    bytes=$((i * 200)) # increasing sizes
+    yes "UTF-8 test $i: æ ø å - слово\n" \
+    | head -c $(($bytes + 8)) \
+    | iconv -f UTF-8 -t UTF-8 -c \
+    | head -c "$bytes" \
+    > "test_files/utf_rand_${i}.input"
+    # repeat of some known utf characters
+    # iconv removes "halved" multibyte charcters caused from head -c by converting utf to utf
+    # overshoots size at first to make room for the clean-up
+done
+
 
 echo "Running the tests.."
 exitcode=0
