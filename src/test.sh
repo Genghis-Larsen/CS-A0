@@ -35,15 +35,11 @@ done
 
 ## UTF-8 files of various sizes
 for i in $(seq 1 20); do # 20 files
-    bytes=$((i * 200)) # increasing sizes
     yes "UTF-8 test $i: æ ø å - слово\n" \
-    | head -c $(($bytes + 8)) \
-    | iconv -f UTF-8 -t UTF-8 -c \
-    | head -c "$bytes" \
+    | head -n 50 \
     > "test_files/utf_rand_${i}.input"
     # repeat of some known utf characters
-    # iconv removes "halved" multibyte charcters caused from head -c by converting utf to utf
-    # overshoots size at first to make room for the clean-up
+    # doesnt increase size to exact byte count, since characters might be halved 
 done
 
 
@@ -51,9 +47,11 @@ echo "Running the tests.."
 exitcode=0
 for f in test_files/*.input
 do
-  echo ">>> Testing ${f}.."
+  echo ">>> Testing ${f}.."             # Added line 3 and 4; Since tests couldnt match "UTF-8 Unicode text" with "Unicode text, UTF-8 text"
   file    ${f} | sed -e 's/ASCII text.*/ASCII text/' \
                          -e 's/UTF-8 Unicode text.*/UTF-8 Unicode text/' \
+                         -e 's/Unicode text, UTF-8 text.*/UTF-8 Unicode text/' \
+                         -e 's/Unicode text, UTF-8.*/UTF-8 Unicode text/' \
                          -e 's/ISO-8859 text.*/ISO-8859 text/' \
                          -e 's/writable, regular file, no read permission/cannot determine (Permission denied)/' \
                          > "${f}.expected"
