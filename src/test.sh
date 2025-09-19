@@ -59,17 +59,22 @@ done
     printf 'ASCII'
 } > test_files/data_nullprefix.input
 
+## Unreadable file
+printf "unreadable" -> test_files/unreadable_test.input
+chmod 000 test_files/unreadable_test.input # makes it write-only
+
 echo "Running the tests.."
 exitcode=0
 for f in test_files/*.input
 do
   echo ">>> Testing ${f}.."             # Added line 3 and 4; Since tests couldnt match "UTF-8 Unicode text" with "Unicode text, UTF-8 text"
+                                        # Removed 'writeable' on line 5; since it didn't match the actual
   file    ${f} | sed -e 's/ASCII text.*/ASCII text/' \
                          -e 's/UTF-8 Unicode text.*/UTF-8 Unicode text/' \
                          -e 's/Unicode text, UTF-8 text.*/UTF-8 Unicode text/' \
                          -e 's/Unicode text, UTF-8.*/UTF-8 Unicode text/' \
                          -e 's/ISO-8859 text.*/ISO-8859 text/' \
-                         -e 's/writable, regular file, no read permission/cannot determine (Permission denied)/' \
+                         -e 's/regular file, no read permission/cannot determine (Permission denied)/' \
                          > "${f}.expected"
   ./file  "${f}" > "${f}.actual"
 
