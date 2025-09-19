@@ -10,20 +10,26 @@ echo "Generating a test_files directory.."
 mkdir -p test_files
 rm -f test_files/*
 
-# Defaultly included test files:
+## Defaultly included test files:
 echo "Generating test files.."
 printf "Hello, World!\n" > test_files/ascii.input
 printf "Hello, World!" > test_files/ascii2.input
 printf "Hello,\x00World!\n" > test_files/data.input
 printf "" > test_files/empty.input
 
-# ASCII test files:
+## Random ascii files of various sizes
 for i in $(seq 1 20); do # Generates 20 files
     bytes=$((i * 200)) # file sizes of 200, 400, 600... bytes
     LC_ALL=C tr -dc 'A-Za-z0-9[:punct:][:space:]' < /dev/urandom | head -c "$bytes" > "test_files/ascii_rand_${i}.input" 
     # Random content of only ascii characters
 done
 
+## Random ISO files of various sizes
+for i in $(seq 1 20); do # 20 files
+    size=$((i * 200)) # increasing file sizes
+    LC_ALL=C tr -dc 'A-Za-z \n\345\346\370' < /dev/urandom | head -c "$size" > "test_files/iso_rand_${i}.input"
+    # only allows known iso characters and specifies single byte codes for æøå
+done
 
 echo "Running the tests.."
 exitcode=0
