@@ -5,7 +5,7 @@
 #include <assert.h>
 
 int print_error(char *path, int errnum) {
-    return fprintf(stdout, "%s Somethings wrong (%s)\n", path, strerror(errnum));
+    return fprintf(stdout, "%s: cannot determine (%s)\n", path, strerror(errnum));
 }
 
 int main(int argc, char *argv[]) {
