@@ -13,7 +13,15 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Usage: file path\n");
         return EXIT_FAILURE;
     }
+
     FILE *f = fopen(argv[1], "r");
+
+    // Testing for non-existing file
+    if (!f) {
+        print_error(argv[1], errno);
+        return EXIT_SUCCESS;
+    }
+
     unsigned char c;
 
     // Testing for empty
