@@ -3,149 +3,118 @@
 #include <string.h> // strerror.
 #include <errno.h>  // errno.
 #include <assert.h>
+#include <stdbool.h>
 
 int print_error(char *path, int errnum) {
-    return fprintf(stdout, "%s: cannot determine (%s)\n", path, strerror(errnum));
+    fprintf(stdout, "%s: cannot determine (%s)\n", path, strerror(errnum));
+    return EXIT_SUCCESS;
+}
+
+int match_found(char *path, char *type, FILE *file) {
+    printf("%s: %s\n", path, type);
+    int status = fclose(file);
+    if (status != 0) {
+        return print_error(path, status);
+    }
+    return EXIT_SUCCESS;
+}
+
+bool in_range(unsigned char byte, int inclusive_from, int inclusive_to) {
+    return byte >= inclusive_from && byte <= inclusive_to; 
 }
 
 int main(int argc, char *argv[]) {
+
+    // Checking arguments
     if (argc != 2) {
         fprintf(stderr, "Usage: file path\n");
         return EXIT_FAILURE;
     }
 
-    FILE *f = fopen(argv[1], "r");
+    // Setup
+    char *path = argv[1];
+    FILE *f = fopen(path, "r");
     if (!f) {  // Testing for non-existing file
-        print_error(argv[1], errno);
-        return EXIT_SUCCESS;
+        return print_error(path, errno);
     }
-
     unsigned char c;
 
     // Testing for empty; differenting between error and end-of-file
     size_t r = fread(&c, sizeof(char), 1, f);
     if (r == 0) { 
         if (ferror(f)) {
-            int e = errno; fclose(f);
-            print_error(argv[1],e);
-            return EXIT_SUCCESS;
+            int e = errno;
+            fclose(f);
+            return print_error(path, e);
         }
-        printf("%s: empty\n", argv[1]);
-        fclose(f);
-        return EXIT_SUCCESS;
+        return match_found(path, "empty", f);
     }
 
-    // Testing for ascii
-    fseek(f, 0, SEEK_SET);
-
+    // Testing for ascii and iso
     if (fseek(f, 0, SEEK_SET) != 0) { // error check
         int e = errno; 
         fclose(f);
-        print_error(argv[1], e);
+        return print_error(path, e);
     }
-    int isAscii = 1;
-    while ((r = fread(&c, sizeof(char), 1, f) == 1)) {
-        if (c < 7 || (c > 13 && c < 27) || (c > 27 && c < 32) || c > 127) {
-            isAscii = 0;
+    bool ascii = true;
+    bool iso = true;
+    while (fread(&c, sizeof(char), 1, f) == 1) {
+        if (byte < 7 || in_range(byte, 14, 27) || in_range(byte, 28, 31) || in_range(byte, 127, 159)) {
+            ascii = false;
+            iso = false;
             break;
+        } else if (byte > 159) {
+            ascii = false;
         }
     }
-    if (r == 0 && ferror(f)) {
+    if (ferror(f) != 0) {
         int e = errno;
         fclose(f);
-        print_error(argv[1], e);
-        return EXIT_SUCCESS;
+        return print_error(path, e);
     }
-    if (isAscii == 1) {
-        printf("%s: ASCII text\n", argv[1]);
-        fclose(f);
-        return EXIT_SUCCESS;
+    if (ascii) {
+        return match_found(path, "ASCII text", file);
+    } else if (iso) {
+        return match_found(path, "ISO-8859 text", file);
     }
 
-    // Testing for ISO
-    fseek(f, 0, SEEK_SET);
-
+    // Testing for utf
     if (fseek(f, 0, SEEK_SET) != 0) { // error check
         int e = errno;
         fclose(f);
-        print_error(argv[1], e);
-        return EXIT_SUCCESS;
+        return print_error(path, e);
     }
-    int isIso = 1;
-    while ((r = fread(&c, sizeof(char), 1, f)) == 1) {
-        if (c < 7 || (c > 13 && c < 27) || (c > 27 && c < 32) || (c > 127 && c < 160)) {
-            isIso = 0;
+    bool utf = true;
+    while (fread(&c, sizeof(char), 1, f) == 1) {
+        int next = 0;
+        if (byte == 0 || byte > 247 || in_range(byte, 128, 191)) {
+            utf = false;
             break;
+        } else if (in_range(byte, 192, 223)) {
+            next = 1;
+        } else if (in_range(byte, 224, 239)) {
+            next = 2;
+        } else if (in_range(byte, 240, 249)) {
+            next = 3;
         }
-    }
-    if (r == 0 && ferror(f)) {
-        int e = errno;
-        fclose(f);
-        print_error(argv[1], e);
-        return EXIT_SUCCESS;
-    }
-    if (isIso == 1) {
-        printf("%s: ISO-8859 text\n", argv[1]);
-        return EXIT_SUCCESS;
-    }
-
-    // Testing for UTF
-    fseek(f, 0, SEEK_SET);
-
-    if (fseek(f, 0 ,SEEK_SET) != 0) { // error check
-        int e = errno;
-        fclose(f);
-        print_error(argv[1], e);
-        return EXIT_SUCCESS;
-    }
-
-    int isUtf = 1;
-    while ((r = fread(&c, sizeof(char), 1, f)) == 1) {
-        if (c == 0 || c > 247 || (c > 127 && c < 192)) {
-            isUtf = 0;
-            break;
-        } else if (c > 191 && c < 224) {
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
-                break;
-            }
-        } else if (c > 223 && c < 240) {
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
-                break;
-            }
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
-                break;
-            }
-        } else if (c > 239 && c < 248) {
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
-                break;
-            }
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
-                break;
-            }
-            if (fread(&c, sizeof(char), 1, f) != 1 || c < 128 || c > 191) {
-                isUtf = 0;
+        while (next-- > 0) {
+            if (fread(&byte, sizeof(char), 1, file) == 0 || !in_range(byte, 128, 191)) {
+                int status = ferror(file);
+                if (status != 0) {
+                    return print_error(path, status);
+                }
+                utf = false;
                 break;
             }
         }
     }
-
-    if (r == 0 && ferror(f)) {
+    if (ferror(f) != 0) {
         int e = errno;
         fclose(f);
-        print_error(argv[1], e);
-        return EXIT_SUCCESS;
+        return print_error(path, e);
     }
-
-    if (isUtf == 1) {
-        printf("%s: UTF-8 Unicode text\n", argv[1]);
-        return EXIT_SUCCESS;
+    if (utf) {
+        return match_found(path, "UTF-8 Unicode text", file);
     }
-    printf("%s: data\n", argv[1]);
-    fclose(f);
-    return EXIT_SUCCESS;
+    return match_found(path, "data", file);
 }
