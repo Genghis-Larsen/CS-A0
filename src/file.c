@@ -37,10 +37,10 @@ int main(int argc, char *argv[]) {
     if (!f) {  // Testing for non-existing file
         return print_error(path, errno);
     }
-    unsigned char c;
+    unsigned char byte;
 
     // Testing for empty; differenting between error and end-of-file
-    size_t r = fread(&c, sizeof(char), 1, f);
+    int r = fread(&byte, sizeof(char), 1, f);
     if (r == 0) { 
         if (ferror(f)) {
             int e = errno;
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
     }
     bool ascii = true;
     bool iso = true;
-    while (fread(&c, sizeof(char), 1, f) == 1) {
+    while (fread(&byte, sizeof(char), 1, f) == 1) {
         if (byte < 7 || in_range(byte, 14, 27) || in_range(byte, 28, 31) || in_range(byte, 127, 159)) {
             ascii = false;
             iso = false;
@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
         return print_error(path, e);
     }
     if (ascii) {
-        return match_found(path, "ASCII text", file);
+        return match_found(path, "ASCII text", f);
     } else if (iso) {
-        return match_found(path, "ISO-8859 text", file);
+        return match_found(path, "ISO-8859 text", f);
     }
 
     // Testing for utf
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
         return print_error(path, e);
     }
     bool utf = true;
-    while (fread(&c, sizeof(char), 1, f) == 1) {
+    while (fread(&byte, sizeof(char), 1, f) == 1) {
         int next = 0;
         if (byte == 0 || byte > 247 || in_range(byte, 128, 191)) {
             utf = false;
@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
             next = 3;
         }
         while (next-- > 0) {
-            if (fread(&byte, sizeof(char), 1, file) == 0 || !in_range(byte, 128, 191)) {
-                int status = ferror(file);
+            if (fread(&byte, sizeof(char), 1, f) == 0 || !in_range(byte, 128, 191)) {
+                int status = ferror(f);
                 if (status != 0) {
                     return print_error(path, status);
                 }
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
         return print_error(path, e);
     }
     if (utf) {
-        return match_found(path, "UTF-8 Unicode text", file);
+        return match_found(path, "UTF-8 Unicode text", f);
     }
-    return match_found(path, "data", file);
+    return match_found(path, "data", f);
 }
