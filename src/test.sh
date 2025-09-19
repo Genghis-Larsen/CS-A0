@@ -42,6 +42,22 @@ for i in $(seq 1 20); do # 20 files
     # doesnt increase size to exact byte count, since characters might be halved 
 done
 
+## Data files of increasing sizes
+# Random bytes
+for i in $(seq 1 10); do
+    head -c $((i * 256)) /dev/urandom > "test_files/data_random_${i}.input"
+done
+
+# "Empty" files with zero-bytes.
+for i in $(seq 1 5); do 
+    head -c $((i * 512)) /dev/zero > "test_files/data_zeroes${i}.input"
+done
+
+# Zero-bytes followed by ascii
+    {
+    head -c 64 /dev/zero
+    printf 'ASCII'
+} > test_files/data_nullprefix.input
 
 echo "Running the tests.."
 exitcode=0
