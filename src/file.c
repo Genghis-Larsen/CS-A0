@@ -15,43 +15,74 @@ int main(int argc, char *argv[]) {
     }
 
     FILE *f = fopen(argv[1], "r");
-
-    // Testing for non-existing file
-    if (!f) {
+    if (!f) {  // Testing for non-existing file
         print_error(argv[1], errno);
         return EXIT_SUCCESS;
     }
 
     unsigned char c;
 
-    // Testing for empty
-    if (fread(&c, sizeof(char), 1, f) == 0) {
+    // Testing for empty; differenting between error and end-of-file
+    size_t r = fread(&c, sizeof(char), 1, f);
+    if (r == 0) { 
+        if (ferror(f)) {
+            int e = errno; fclose(f);
+            print_error(argv[1],e);
+            return EXIT_SUCCESS;
+        }
         printf("%s: empty\n", argv[1]);
+        fclose(f);
         return EXIT_SUCCESS;
     }
 
     // Testing for ascii
-    fseek(f, 0, SEEK_SET); // returns non-zero if error
+    fseek(f, 0, SEEK_SET);
+
+    if (fseek(f, 0, SEEK_SET) != 0) { // error check
+        int e = errno; 
+        fclose(f);
+        print_error(argv[1], e);
+    }
     int isAscii = 1;
-    while (fread(&c, sizeof(char), 1, f) == 1) {
+    while ((r = fread(&c, sizeof(char), 1, f) == 1)) {
         if (c < 7 || (c > 13 && c < 27) || (c > 27 && c < 32) || c > 127) {
             isAscii = 0;
             break;
         }
     }
+    if (r == 0 && ferror(f)) {
+        int e = errno;
+        fclose(f);
+        print_error(argv[1], e);
+        return EXIT_SUCCESS;
+    }
     if (isAscii == 1) {
         printf("%s: ASCII text\n", argv[1]);
+        fclose(f);
         return EXIT_SUCCESS;
     }
 
     // Testing for ISO
     fseek(f, 0, SEEK_SET);
+
+    if (fseek(f, 0, SEEK_SET) != 0) { // error check
+        int e = errno;
+        fclose(f);
+        print_error(argv[1], e);
+        return EXIT_SUCCESS;
+    }
     int isIso = 1;
-    while (fread(&c, sizeof(char), 1, f) == 1) {
+    while ((r = fread(&c, sizeof(char), 1, f)) == 1) {
         if (c < 7 || (c > 13 && c < 27) || (c > 27 && c < 32) || (c > 127 && c < 160)) {
             isIso = 0;
             break;
         }
+    }
+    if (r == 0 && ferror(f)) {
+        int e = errno;
+        fclose(f);
+        print_error(argv[1], e);
+        return EXIT_SUCCESS;
     }
     if (isIso == 1) {
         printf("%s: ISO-8859 text\n", argv[1]);
@@ -60,8 +91,16 @@ int main(int argc, char *argv[]) {
 
     // Testing for UTF
     fseek(f, 0, SEEK_SET);
+
+    if (fseek(f, 0 ,SEEK_SET) != 0) { // error check
+        int e = errno;
+        fclose(f);
+        print_error(argv[1], e);
+        return EXIT_SUCCESS;
+    }
+
     int isUtf = 1;
-    while (fread(&c, sizeof(char), 1, f) == 1) {
+    while ((r = fread(&c, sizeof(char), 1, f)) == 1) {
         if (c == 0 || c > 247 || (c > 127 && c < 192)) {
             isUtf = 0;
             break;
@@ -94,10 +133,19 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    if (r == 0 && ferror(f)) {
+        int e = errno;
+        fclose(f);
+        print_error(argv[1], e);
+        return EXIT_SUCCESS;
+    }
+
     if (isUtf == 1) {
         printf("%s: UTF-8 Unicode text\n", argv[1]);
         return EXIT_SUCCESS;
     }
     printf("%s: data\n", argv[1]);
+    fclose(f);
     return EXIT_SUCCESS;
 }
