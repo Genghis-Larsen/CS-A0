@@ -16,3 +16,6 @@ This script can be run in the terminal with the `test test.sh` command while in 
 - Felix Larsen / cws242 
 - Andreas Redsøe Olsen / vjc544
 - Zacharias Koefoed / sqb129
+
+### Github repository
+The github repository can be found at: [https://github.com/Genghis-Larsen/CS-A0](https://github.com/Genghis-Larsen/CS-A0)
