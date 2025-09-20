@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
             ascii = false;
         }
     }
-    if (ferror(f) != 0) {
+    if (ferror(f) != 0) { // Checks if while-loop stopped because of error
         int e = errno;
         fclose(f);
         return print_error(path, e);
@@ -100,7 +100,8 @@ int main(int argc, char *argv[]) {
         while (next-- > 0) {
             if (fread(&byte, sizeof(char), 1, f) == 0 || !in_range(byte, 128, 191)) {
                 int status = ferror(f);
-                if (status != 0) {
+                if (status != 0) { // Checks if read was 0 because of error
+                    fclose(f);
                     return print_error(path, status);
                 }
                 utf = false;
@@ -108,7 +109,7 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-    if (ferror(f) != 0) {
+    if (ferror(f) != 0) { // Checks if while-loop stopped because of error
         int e = errno;
         fclose(f);
         return print_error(path, e);
